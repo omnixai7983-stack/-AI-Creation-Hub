@@ -1,0 +1,282 @@
+[
+    {
+        "id": "12899b828fd1022f",
+        "type": "tab",
+        "label": "Flow 3",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "42f9ec836fba89ca",
+        "type": "http in",
+        "z": "12899b828fd1022f",
+        "name": "AI Creation Request",
+        "url": "/ai-create",
+        "method": "post",
+        "upload": true,
+        "skipBodyParsing": true,
+        "swaggerDoc": "",
+        "x": 90,
+        "y": 240,
+        "wires": [
+            [
+                "ee6e6dc5bdafd9a1"
+            ]
+        ]
+    },
+    {
+        "id": "ee6e6dc5bdafd9a1",
+        "type": "function",
+        "z": "12899b828fd1022f",
+        "name": "Validate Prompt & Detect Type",
+        "func": "// Validate input and prepare Hugging Face API call\nif (!msg.payload.prompt) {\n    msg.status = 400;\n    msg.payload = { error: \"Prompt is required\" };\n    return [null, msg];\n}\n\nmsg.originalPrompt = msg.payload.prompt;\n\n// Hugging Face API configuration with YOUR API KEY\nmsg.url = \"https://api-inference.huggingface.co/models/microsoft/DialoGPT-large\";\nmsg.method = \"POST\";\nmsg.headers = {\n    \"Content-Type\": \"application/json\",\n    \"Authorization\": \"Bearer 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\" // YOUR API KEY\n};\nmsg.payload = {\n    \"inputs\": `Analyze this request: \"${msg.originalPrompt}\". Choose ONE: photo (images), video (videos), app (mobile apps), game (games), web (websites). Respond with only one word.`,\n    \"parameters\": {\n        \"max_length\": 10,\n        \"temperature\": 0.1,\n        \"do_sample\": false\n    }\n};\n\nnode.log(\"Sending request to Hugging Face API...\");\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 330,
+        "y": 240,
+        "wires": [
+            [
+                "e235b8db9522964c"
+            ]
+        ]
+    },
+    {
+        "id": "d07064e25b59a0c3",
+        "type": "switch",
+        "z": "12899b828fd1022f",
+        "name": "Route to AI Agent",
+        "property": "agentType",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "photo ",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "vedio",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "app",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "game",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "web",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 5,
+        "x": 810,
+        "y": 240,
+        "wires": [
+            [
+                "11520faf310c81c0"
+            ],
+            [
+                "3f74ac0bdd401b77"
+            ],
+            [
+                "9b74594a3e812079"
+            ],
+            [
+                "7b890be9cbf719da"
+            ],
+            [
+                "7cb554436ce77560"
+            ]
+        ]
+    },
+    {
+        "id": "11520faf310c81c0",
+        "type": "function",
+        "z": "12899b828fd1022f",
+        "name": "Photo Maker Agent ",
+        "func": "// Photo Maker AI Agent - Uses free image APIs\nmsg.agent = \"Photo Maker\";\n\n// Generate image using free APIs\nconst keywords = msg.originalPrompt.replace(/photo|image|picture|generate|create/gi, '').trim();\nconst imageId = Math.floor(Math.random() * 1000);\n\n// Using Picsum Photos API for demo\nmsg.imageUrl = `https://picsum.photos/800/600?random=${imageId}`;\nmsg.filename = `photo_${Date.now()}.jpg`;\nmsg.fileType = 'image';\nmsg.result = {\n    agent: \"Photo Maker\",\n    prompt: msg.originalPrompt,\n    imageUrl: msg.imageUrl,\n    downloadUrl: `/download/${msg.filename}`,\n    preview: `<img src=\"${msg.imageUrl}\" alt=\"Generated Photo\" style=\"max-width: 100%; height: auto;\">`,\n    timestamp: new Date().toISOString()\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1050,
+        "y": 160,
+        "wires": [
+            [
+                "f291b69b43dfe0b8"
+            ]
+        ]
+    },
+    {
+        "id": "3f74ac0bdd401b77",
+        "type": "function",
+        "z": "12899b828fd1022f",
+        "name": "Video Maker Agent",
+        "func": "// Video Maker AI Agent\nmsg.agent = \"Video Maker\";\n\n// Generate video using mock data\nconst keywords = msg.originalPrompt.replace(/video|movie|clip|generate|create/gi, '').trim();\n\n// Mock video generation\nmsg.videoUrl = `https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4`;\nmsg.filename = `video_${Date.now()}.mp4`;\nmsg.fileType = 'video';\nmsg.result = {\n    agent: \"Video Maker\",\n    prompt: msg.originalPrompt,\n    videoUrl: msg.videoUrl,\n    downloadUrl: `/download/${msg.filename}`,\n    preview: `<video controls style=\"max-width: 100%; height: auto;\"><source src=\"${msg.videoUrl}\" type=\"video/mp4\">Your browser does not support the video tag.</video>`,\n    duration: \"1:00\",\n    timestamp: new Date().toISOString()\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1050,
+        "y": 200,
+        "wires": [
+            [
+                "f291b69b43dfe0b8"
+            ]
+        ]
+    },
+    {
+        "id": "9b74594a3e812079",
+        "type": "function",
+        "z": "12899b828fd1022f",
+        "name": "App Maker Agent ",
+        "func": "// App Maker AI Agent\nmsg.agent = \"App Maker\";\n\n// Generate mobile app code\nconst appName = msg.originalPrompt.replace(/app|application|mobile|create|generate/gi, '').trim() || 'MyApp';\nconst appId = `app_${Date.now()}`;\n\n// React Native template\nconst appCode = `// ${appName} - Generated by AI Creation Hub\nimport React from 'react';\nimport { View, Text, StyleSheet } from 'react-native';\n\nexport default function ${appName.replace(/\\s+/g, '')}() {\n    return (\n        <View style={styles.container}>\n            <Text style={styles.title}>${appName}</Text>\n            <Text style={styles.subtitle}>Created with AI Creation Hub</Text>\n        </View>\n    );\n}\n\nconst styles = StyleSheet.create({\n    container: {\n        flex: 1,\n        justifyContent: 'center',\n        alignItems: 'center',\n        backgroundColor: '#f0f0f0',\n    },\n    title: {\n        fontSize: 24,\n        fontWeight: 'bold',\n        marginBottom: 10,\n    },\n    subtitle: {\n        fontSize: 16,\n        color: '#666',\n    },\n});`;\n\nmsg.filename = `${appId}.js`;\nmsg.fileContent = appCode;\nmsg.fileType = 'code';\nmsg.result = {\n    agent: \"App Maker\",\n    prompt: msg.originalPrompt,\n    appName: appName,\n    code: appCode,\n    downloadUrl: `/download/${msg.filename}`,\n    preview: `<div style=\"padding: 20px; background: #f0f0f0; border-radius: 10px;\"><h3>${appName} - Mobile App</h3><pre style=\"background: white; padding: 15px; border-radius: 5px; overflow-x: auto;\">${appCode}</pre></div>`,\n    timestamp: new Date().toISOString()\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1050,
+        "y": 240,
+        "wires": [
+            [
+                "f291b69b43dfe0b8"
+            ]
+        ]
+    },
+    {
+        "id": "7cb554436ce77560",
+        "type": "function",
+        "z": "12899b828fd1022f",
+        "name": "Web Maker Agent ",
+        "func": "// Web Maker AI Agent\nmsg.agent = \"Web Maker\";\n\nconst siteName = msg.originalPrompt.replace(/website|web|site|create|generate/gi, '').trim() || 'MyWebsite';\nconst siteId = `website_${Date.now()}`;\n\n// HTML Website template\nconst webCode = `<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>${siteName} - AI Generated Website</title>\n    <style>\n        * { margin: 0; padding: 0; box-sizing: border-box; }\n        body { font-family: 'Arial', sans-serif; line-height: 1.6; color: #333; }\n        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 4rem 2rem; text-align: center; }\n        .nav { background: #2c3e50; padding: 1rem; }\n        .nav a { color: white; text-decoration: none; margin: 0 1rem; }\n        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }\n        .hero { text-align: center; padding: 3rem 0; }\n        .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin: 3rem 0; }\n        .feature-card { background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }\n        .footer { background: #34495e; color: white; text-align: center; padding: 2rem; margin-top: 3rem; }\n    </style>\n</head>\n<body>\n    <nav class=\"nav\">\n        <a href=\"#home\">Home</a>\n        <a href=\"#about\">About</a>\n        <a href=\"#contact\">Contact</a>\n    </nav>\n    \n    <header class=\"header\" id=\"home\">\n        <h1>Welcome to ${siteName}</h1>\n        <p>Created with AI Creation Hub</p>\n    </header>\n    \n    <div class=\"container\">\n        <section class=\"hero\">\n            <h2>Amazing Website Generated by AI</h2>\n            <p>This entire website was created automatically based on your prompt!</p>\n        </section>\n        \n        <section class=\"features\">\n            <div class=\"feature-card\">\n                <h3>Feature One</h3>\n                <p>AI-powered content generation for your website needs.</p>\n            </div>\n            <div class=\"feature-card\">\n                <h3>Feature Two</h3>\n                <p>Responsive design that works on all devices.</p>\n            </div>\n            <div class=\"feature-card\">\n                <h3>Feature Three</h3>\n                <p>Clean, modern code that's ready to deploy.</p>\n            </div>\n        </section>\n    </div>\n    \n    <footer class=\"footer\">\n        <p>&copy; 2024 ${siteName}. All rights reserved.</p>\n        <p>Generated by AI Creation Hub</p>\n    </footer>\n</body>\n</html>`;\n\nmsg.filename = `${siteId}.html`;\nmsg.fileContent = webCode;\nmsg.fileType = 'code';\nmsg.result = {\n    agent: \"Web Maker\",\n    prompt: msg.originalPrompt,\n    websiteName: siteName,\n    code: webCode,\n    downloadUrl: `/download/${msg.filename}`,\n    preview: `<div style=\"border: 1px solid #ddd; padding: 15px; background: white;\"><h3 style=\"color: #667eea;\">${siteName} - Website</h3><p>Fully responsive website with modern design!</p></div>`,\n    timestamp: new Date().toISOString()\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1050,
+        "y": 320,
+        "wires": [
+            [
+                "f291b69b43dfe0b8"
+            ]
+        ]
+    },
+    {
+        "id": "7b890be9cbf719da",
+        "type": "function",
+        "z": "12899b828fd1022f",
+        "name": "Game Maker Agent",
+        "func": "// Game Maker AI Agent - HTML5 Games\nmsg.agent = \"Game Maker\";\n\nconst gameName = msg.originalPrompt.replace(/game|create|generate|html5|play/gi, '').trim() || 'MyGame';\nconst gameId = `game_${Date.now()}`;\n\n// HTML5 Game template\nconst gameCode = `<!DOCTYPE html>\n<html>\n<head>\n    <title>${gameName} - AI Generated Game</title>\n    <style>\n        body { margin: 0; padding: 20px; background: #1a1a2e; color: white; font-family: Arial; }\n        .game-container { text-align: center; }\n        canvas { border: 2px solid #0f3460; background: #16213e; }\n        .score { font-size: 24px; margin: 10px; }\n    </style>\n</head>\n<body>\n    <div class=\"game-container\">\n        <h1>${gameName}</h1>\n        <div class=\"score\">Score: <span id=\"score\">0</span></div>\n        <canvas id=\"gameCanvas\" width=\"800\" height=\"400\"></canvas>\n    </div>\n    \n    <script>\n        const canvas = document.getElementById('gameCanvas');\n        const ctx = canvas.getContext('2d');\n        let score = 0;\n        \n        // Simple game logic\n        function gameLoop() {\n            ctx.clearRect(0, 0, canvas.width, canvas.height);\n            \n            // Draw player\n            ctx.fillStyle = '#e94560';\n            ctx.fillRect(100, 150, 50, 50);\n            \n            // Draw enemy\n            ctx.fillStyle = '#4cc9f0';\n            ctx.fillRect(600, 150, 50, 50);\n            \n            // Update score\n            document.getElementById('score').textContent = score;\n            score++;\n            \n            requestAnimationFrame(gameLoop);\n        }\n        \n        gameLoop();\n    </script>\n</body>\n</html>`;\n\nmsg.filename = `${gameId}.html`;\nmsg.fileContent = gameCode;\nmsg.fileType = 'code';\nmsg.result = {\n    agent: \"Game Maker\",\n    prompt: msg.originalPrompt,\n    gameName: gameName,\n    code: gameCode,\n    downloadUrl: `/download/${msg.filename}`,\n    preview: `<div style=\"border: 2px solid #0f3460; padding: 10px; background: #16213e; color: white;\"><h3 style=\"color: #e94560;\">${gameName} - HTML5 Game</h3><p>Click download to play the game!</p></div>`,\n    timestamp: new Date().toISOString()\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1050,
+        "y": 280,
+        "wires": [
+            [
+                "f291b69b43dfe0b8"
+            ]
+        ]
+    },
+    {
+        "id": "f291b69b43dfe0b8",
+        "type": "function",
+        "z": "12899b828fd1022f",
+        "name": "Create Local File",
+        "func": "// =============================================\n// CREATE LOCAL FILE - Detailed Version\n// =============================================\n\n// This node handles saving all generated content to local storage\n// and managing file metadata for download functionality\n\ntry {\n    // Log incoming message for debugging\n    node.log(`File creation started for: ${msg.filename}`);\n    node.log(`File type: ${msg.fileType}`);\n    node.log(`Agent: ${msg.agent}`);\n    \n    // Ensure we have a filename\n    if (!msg.filename) {\n        msg.filename = `ai_creation_${Date.now()}.txt`;\n        node.warn('No filename provided, using default: ' + msg.filename);\n    }\n    \n    // Create files directory if it doesn't exist\n    const fs = global.get('fs');\n    const path = global.get('path');\n    \n    const baseDir = './ai-creations';\n    const downloadsDir = './ai-creations/downloads';\n    const metadataDir = './ai-creations/metadata';\n    \n    // Create directories if they don't exist\n    if (!fs.existsSync(baseDir)) {\n        fs.mkdirSync(baseDir, { recursive: true });\n        node.log('Created directory: ' + baseDir);\n    }\n    \n    if (!fs.existsSync(downloadsDir)) {\n        fs.mkdirSync(downloadsDir, { recursive: true });\n        node.log('Created directory: ' + downloadsDir);\n    }\n    \n    if (!fs.existsSync(metadataDir)) {\n        fs.mkdirSync(metadataDir, { recursive: true });\n        node.log('Created directory: ' + metadataDir);\n    }\n    \n    // File creation timestamp\n    const creationTime = new Date().toISOString();\n    const fileId = `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n    \n    // Handle different file types\n    switch(msg.fileType) {\n        \n        // ========== CODE FILES (Apps, Games, Websites) ==========\n        case 'code':\n            if (msg.fileContent) {\n                const filePath = path.join(downloadsDir, msg.filename);\n                \n                // Write main code file\n                fs.writeFileSync(filePath, msg.fileContent, 'utf8');\n                node.log(`Code file created: ${filePath}`);\n                \n                // Generate additional project files based on file type\n                if (msg.agent === 'App Maker') {\n                    // Create package.json for React Native apps\n                    const packageJson = {\n                        name: msg.result.appName?.toLowerCase() || 'ai-app',\n                        version: \"1.0.0\",\n                        description: `AI-generated mobile app: ${msg.originalPrompt}`,\n                        main: \"index.js\",\n                        scripts: {\n                            \"start\": \"react-native start\",\n                            \"android\": \"react-native run-android\",\n                            \"ios\": \"react-native run-ios\",\n                            \"test\": \"jest\"\n                        },\n                        dependencies: {\n                            \"react\": \"^18.0.0\",\n                            \"react-native\": \"^0.72.0\"\n                        },\n                        devDependencies: {\n                            \"@babel/core\": \"^7.20.0\",\n                            \"@babel/preset-env\": \"^7.20.0\",\n                            \"babel-jest\": \"^29.0.0\",\n                            \"jest\": \"^29.0.0\",\n                            \"metro-react-native-babel-preset\": \"^0.76.0\"\n                        },\n                        jest: {\n                            preset: \"react-native\"\n                        },\n                        keywords: [\"ai-generated\", \"mobile\", \"react-native\"]\n                    };\n                    \n                    const packageJsonPath = path.join(downloadsDir, `package_${msg.filename.replace('.js', '.json')}`);\n                    fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2), 'utf8');\n                    \n                    // Create README.md for the app\n                    const readmeContent = `# ${msg.result.appName || 'AI Generated App'}\n\n## 🚀 AI Creation Hub - Mobile Application\n\n**Generated on:** ${creationTime}\n**AI Agent:** ${msg.agent}\n**Original Prompt:** \"${msg.originalPrompt}\"\n\n### 📱 App Features\n- ✅ AI-generated React Native code\n- ✅ Responsive design\n- ✅ Modern UI components\n- ✅ Ready to customize\n\n### 🛠️ Installation\n\\`\\`\\`bash\nnpm install\nnpx react-native run-android\n# or\nnpx react-native run-ios\n\\`\\`\\`\n\n### 📁 Project Structure\n\\`\\`\\`\n${msg.result.appName || 'App'}/\n├── ${msg.filename}          # Main component\n├── package.json            # Dependencies\n├── app.json               # App configuration\n└── README.md              # This file\n\\`\\`\\`\n\n### 🎯 Next Steps\n1. Customize the app logic\n2. Add your own styling\n3. Integrate with APIs\n4. Test on devices\n\n---\n*Generated by AI Creation Hub - No API Keys Required*`;\n                    \n                    const readmePath = path.join(downloadsDir, `README_${msg.filename.replace('.js', '.md')}`);\n                    fs.writeFileSync(readmePath, readmeContent, 'utf8');\n                    \n                    // Store additional files in global context\n                    global.set(`file_package_${msg.filename.replace('.js', '.json')}`, {\n                        content: JSON.stringify(packageJson, null, 2),\n                        filename: `package_${msg.filename.replace('.js', '.json')}`,\n                        type: 'application/json'\n                    });\n                    \n                    global.set(`file_README_${msg.filename.replace('.js', '.md')}`, {\n                        content: readmeContent,\n                        filename: `README_${msg.filename.replace('.js', '.md')}`,\n                        type: 'text/markdown'\n                    });\n                    \n                    msg.additionalFiles = {\n                        packageJson: `/download/package_${msg.filename.replace('.js', '.json')}`,\n                        readme: `/download/README_${msg.filename.replace('.js', '.md')}`\n                    };\n                }\n                \n                // For HTML games and websites\n                if (msg.filename.endsWith('.html')) {\n                    // Create CSS file for games/websites\n                    const cssContent = `/* ${msg.filename} - AI Generated Styles */\n/* Generated by AI Creation Hub - ${creationTime} */\n\nbody {\n    margin: 0;\n    padding: 0;\n    font-family: 'Arial', sans-serif;\n    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n    min-height: 100vh;\n}\n\n.game-container, .website-container {\n    max-width: 1200px;\n    margin: 0 auto;\n    padding: 20px;\n}\n\n/* Responsive design */\n@media (max-width: 768px) {\n    .game-container, .website-container {\n        padding: 10px;\n    }\n}\n\n/* Animation classes */\n.fade-in {\n    animation: fadeIn 0.5s ease-in;\n}\n\n@keyframes fadeIn {\n    from { opacity: 0; transform: translateY(20px); }\n    to { opacity: 1; transform: translateY(0); }\n}\n\n/* AI Creation Hub Signature */\n.ai-signature {\n    text-align: center;\n    color: #666;\n    font-size: 12px;\n    margin-top: 20px;\n    padding: 10px;\n    border-top: 1px solid #ddd;\n}`;\n                    \n                    const cssFilename = msg.filename.replace('.html', '.css');\n                    const cssPath = path.join(downloadsDir, cssFilename);\n                    fs.writeFileSync(cssPath, cssContent, 'utf8');\n                    \n                    global.set(`file_${cssFilename}`, {\n                        content: cssContent,\n                        filename: cssFilename,\n                        type: 'text/css'\n                    });\n                    \n                    if (!msg.additionalFiles) msg.additionalFiles = {};\n                    msg.additionalFiles.css = `/download/${cssFilename}`;\n                }\n                \n                // Store main file in global context for download\n                global.set(`file_${msg.filename}`, {\n                    content: msg.fileContent,\n                    filename: msg.filename,\n                    type: msg.filename.endsWith('.js') ? 'application/javascript' : \n                          msg.filename.endsWith('.html') ? 'text/html' : 'text/plain',\n                    filePath: filePath,\n                    size: Buffer.byteLength(msg.fileContent, 'utf8'),\n                    created: creationTime\n                });\n                \n                msg.fileSaved = true;\n                msg.filePath = filePath;\n                msg.fileSize = `${(Buffer.byteLength(msg.fileContent, 'utf8') / 1024).toFixed(2)} KB`;\n            }\n            break;\n            \n        // ========== IMAGE FILES ==========\n        case 'image':\n            if (msg.imageUrl) {\n                // For images, we store the URL and metadata\n                const imageInfo = {\n                    url: msg.imageUrl,\n                    filename: msg.filename,\n                    type: 'image/jpeg',\n                    source: 'picsum.photos',\n                    dimensions: '800x600',\n                    size: '~500KB',\n                    created: creationTime,\n                    prompt: msg.originalPrompt,\n                    agent: msg.agent\n                };\n                \n                global.set(`file_${msg.filename}`, imageInfo);\n                \n                // Create image metadata file\n                const metadata = {\n                    fileId: fileId,\n                    filename: msg.filename,\n                    type: 'image',\n                    agent: msg.agent,\n                    prompt: msg.originalPrompt,\n                    sourceUrl: msg.imageUrl,\n                    dimensions: '800x600',\n                    format: 'JPEG',\n                    quality: 'High',\n                    created: creationTime,\n                    metadata: msg.metadata || {},\n                    downloadUrl: `/download/${msg.filename}`,\n                    previewUrl: msg.imageUrl\n                };\n                \n                const metadataPath = path.join(metadataDir, `${msg.filename}.json`);\n                fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2), 'utf8');\n                \n                msg.fileSaved = true;\n                msg.fileInfo = imageInfo;\n                node.log(`Image metadata saved: ${metadataPath}`);\n            }\n            break;\n            \n        // ========== VIDEO FILES ==========\n        case 'video':\n            if (msg.videoUrl) {\n                const videoInfo = {\n                    url: msg.videoUrl,\n                    filename: msg.filename,\n                    type: 'video/mp4',\n                    source: 'sample-videos.com',\n                    duration: msg.result?.duration || '1:00',\n                    size: '~1MB',\n                    created: creationTime,\n                    prompt: msg.originalPrompt,\n                    agent: msg.agent\n                };\n                \n                global.set(`file_${msg.filename}`, videoInfo);\n                \n                // Create video metadata\n                const metadata = {\n                    fileId: fileId,\n                    filename: msg.filename,\n                    type: 'video',\n                    agent: msg.agent,\n                    prompt: msg.originalPrompt,\n                    sourceUrl: msg.videoUrl,\n                    duration: msg.result?.duration || '1:00',\n                    format: 'MP4',\n                    resolution: '1280x720',\n                    created: creationTime,\n                    downloadUrl: `/download/${msg.filename}`,\n                    previewUrl: msg.videoUrl\n                };\n                \n                const metadataPath = path.join(metadataDir, `${msg.filename}.json`);\n                fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2), 'utf8');\n                \n                msg.fileSaved = true;\n                msg.fileInfo = videoInfo;\n                node.log(`Video metadata saved: ${metadataPath}`);\n            }\n            break;\n            \n        default:\n            node.warn(`Unknown file type: ${msg.fileType}`);\n            // Create a generic text file as fallback\n            const fallbackContent = `AI Creation Hub - Generated Content\n====================================\n\nAgent: ${msg.agent}\nPrompt: \"${msg.originalPrompt}\"\nGenerated: ${creationTime}\n\nResult:\n${JSON.stringify(msg.result, null, 2)}\n\nAdditional Data:\n${JSON.stringify(msg, null, 2)}`;\n            \n            const fallbackPath = path.join(downloadsDir, msg.filename);\n            fs.writeFileSync(fallbackPath, fallbackContent, 'utf8');\n            \n            global.set(`file_${msg.filename}`, {\n                content: fallbackContent,\n                filename: msg.filename,\n                type: 'text/plain',\n                filePath: fallbackPath\n            });\n            \n            msg.fileSaved = true;\n            msg.filePath = fallbackPath;\n            break;\n    }\n    \n    // Create comprehensive file metadata\n    const fileMetadata = {\n        id: fileId,\n        filename: msg.filename,\n        originalName: msg.filename,\n        type: msg.fileType,\n        agent: msg.agent,\n        prompt: msg.originalPrompt,\n        created: creationTime,\n        size: msg.fileSize || 'N/A',\n        downloadUrl: `/download/${msg.filename}`,\n        additionalFiles: msg.additionalFiles || {},\n        metadata: msg.metadata || {},\n        status: 'created',\n        location: msg.filePath || 'global_context'\n    };\n    \n    // Save metadata to file\n    const metadataPath = path.join(metadataDir, `${fileId}.json`);\n    fs.writeFileSync(metadataPath, JSON.stringify(fileMetadata, null, 2), 'utf8');\n    \n    // Update global file registry\n    const fileRegistry = global.get('file_registry') || [];\n    fileRegistry.push({\n        id: fileId,\n        filename: msg.filename,\n        type: msg.fileType,\n        agent: msg.agent,\n        created: creationTime,\n        downloadUrl: `/download/${msg.filename}`\n    });\n    \n    // Keep only last 100 files in registry\n    if (fileRegistry.length > 100) {\n        fileRegistry.splice(0, fileRegistry.length - 100);\n    }\n    \n    global.set('file_registry', fileRegistry);\n    \n    // Add file info to message\n    msg.fileId = fileId;\n    msg.fileMetadata = fileMetadata;\n    msg.creationTime = creationTime;\n    \n    // Log success\n    node.log(`✅ File creation completed: ${msg.filename}`);\n    node.log(`📁 File ID: ${fileId}`);\n    node.log(`📊 File Type: ${msg.fileType}`);\n    node.log(`🤖 AI Agent: ${msg.agent}`);\n    \n    if (msg.fileSize) {\n        node.log(`💾 File Size: ${msg.fileSize}`);\n    }\n    \n    if (msg.additionalFiles && Object.keys(msg.additionalFiles).length > 0) {\n        node.log(`📎 Additional files: ${Object.keys(msg.additionalFiles).join(', ')}`);\n    }\n    \n} catch (error) {\n    // Comprehensive error handling\n    node.error('File creation failed: ' + error.message, msg);\n    \n    msg.fileError = {\n        error: true,\n        message: error.message,\n        stack: error.stack,\n        timestamp: new Date().toISOString()\n    };\n    \n    msg.fileSaved = false;\n    \n    // Create error log file\n    try {\n        const fs = global.get('fs');\n        const path = global.get('path');\n        const errorDir = './ai-creations/errors';\n        \n        if (!fs.existsSync(errorDir)) {\n            fs.mkdirSync(errorDir, { recursive: true });\n        }\n        \n        const errorLog = {\n            timestamp: new Date().toISOString(),\n            filename: msg.filename,\n            fileType: msg.fileType,\n            agent: msg.agent,\n            error: error.message,\n            stack: error.stack,\n            originalMessage: {\n                filename: msg.filename,\n                fileType: msg.fileType,\n                agent: msg.agent,\n                hasContent: !!msg.fileContent,\n                hasImageUrl: !!msg.imageUrl,\n                hasVideoUrl: !!msg.videoUrl\n            }\n        };\n        \n        const errorPath = path.join(errorDir, `error_${Date.now()}.json`);\n        fs.writeFileSync(errorPath, JSON.stringify(errorLog, null, 2), 'utf8');\n        \n        node.log(`Error details saved to: ${errorPath}`);\n    } catch (logError) {\n        node.error('Failed to save error log: ' + logError.message);\n    }\n}\n\n// Return the message for next node\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1330,
+        "y": 240,
+        "wires": [
+            [
+                "a0a48ef0d3c1db97"
+            ]
+        ]
+    },
+    {
+        "id": "a0a48ef0d3c1db97",
+        "type": "function",
+        "z": "12899b828fd1022f",
+        "name": "Generate Preview",
+        "func": "// =============================================\n// GENERATE PREVIEW - Complete Version\n// =============================================\n\n// Create final response with preview\nmsg.payload = {\n    success: true,\n    agent: msg.agent,\n    result: msg.result,\n    downloadUrl: msg.result.downloadUrl,\n    previewHtml: msg.result.preview,\n    timestamp: new Date().toISOString(),\n    fileInfo: {\n        filename: msg.filename,\n        type: msg.fileType,\n        saved: msg.fileSaved || false\n    }\n};\n\nnode.log(`Preview generated for: ${msg.agent}`);\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1530,
+        "y": 240,
+        "wires": [
+            [
+                "958db89ff5480ab2"
+            ]
+        ]
+    },
+    {
+        "id": "958db89ff5480ab2",
+        "type": "http response",
+        "z": "12899b828fd1022f",
+        "name": "AI Creation Response",
+        "statusCode": "(blank - automatic)",
+        "headers": {
+            "content-type": "application/json"
+        },
+        "x": 1740,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "e235b8db9522964c",
+        "type": "http request",
+        "z": "12899b828fd1022f",
+        "name": "Hugging Face API Call",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "msg.url ",
+        "tls": "",
+        "persist": true,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 580,
+        "y": 240,
+        "wires": [
+            [
+                "d07064e25b59a0c3"
+            ]
+        ]
+    }
+]
